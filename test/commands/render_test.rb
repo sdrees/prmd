@@ -40,12 +40,18 @@ class InteragentRenderTest < Minitest::Test
     assert_match /^## The table of contents/, markdown
     assert_match '<a href="#resource-app"', markdown
     assert_match '- <a href="#link-POST-app-/apps">POST /apps', markdown
-    assert_match '<a name="link-POST-app-/apps"', markdown
+    assert_match '<a name="link-POST-app-/apps"></a>', markdown
   end
 
   def test_render_for_example_as_an_array
     # matches -d '[{...}]' taking into account line breaks and spacing
     expression = /-d '\[[\s\n]+\{[\n\s]+\"name\": \"EXAMPLE\",[\n\s]+\"value\": \"example\"[\s\n]+\}[\n\s]+\]/
+    markdown = render
+    assert_match expression, markdown
+  end
+
+  def test_render_for_regex_patterns_with_pipes
+    expression = /<pre>\^&lbrack;a-z\]\(\?:&lbrack;a&vert;b\]\)\&ast;&lbrack;a-z]&ast;\$/
     markdown = render
     assert_match expression, markdown
   end
@@ -113,6 +119,12 @@ class InteragentRenderTest < Minitest::Test
               'example' => 'OPTION2',
               'enum' => 'OPTION2'
             },
+            'patterned-string' => {
+              'description' => 'A string with a regex pattern applied to it.',
+              'type' => 'string',
+              'example' => 'second',
+              'pattern' => '^[a-z](?:[a|b])*[a-z]*$'
+            },
             'option1' => {
               'properties' => {
                 'type' => {
@@ -175,7 +187,10 @@ class InteragentRenderTest < Minitest::Test
             },
             'options' => {
               '$ref' => '#/definitions/config-var/definitions/options'
-            }
+            },
+            'patterned-string' => {
+              '$ref' => '#/definitions/config-var/definitions/patterned-string'
+            },
           }
         }
       },

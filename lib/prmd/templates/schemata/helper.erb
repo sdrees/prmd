@@ -137,7 +137,18 @@
     end
 
     if value['pattern']
-      description += "<br/> **pattern:** `#{value['pattern']}`"
+      # Prevent the pipe regex pattern characters from being interpreted
+      # as markdown table.
+      # Prevent instances of []() in regexes from being rendered as
+      # markdown links.
+      # Prevent patterns with * being rendered as having emphasis
+      # or being an unordered list.
+      pattern = value['pattern']
+        .gsub(/\|/, '&vert;')
+        .gsub(/\[/, '&lbrack;')
+        .gsub(/\*/, '&ast;')
+
+      description += "<br/> **pattern:** <pre>#{pattern}</pre>"
     end
 
     if value['minLength'] || value['maxLength']
@@ -175,7 +186,7 @@
     else
       ''
     end
-    type += (value['format'] || (value['type'] - ['null']).first)
+    type += (value['format'] || (value['type'] - ['null']).join(' or '))
     [key, type, description, example]
   end
 
@@ -183,8 +194,8 @@
   def build_link_path(schema, link)
     link['href'].gsub(%r|(\{\([^\)]+\)\})|) do |ref|
       ref = ref.gsub('%2F', '/').gsub('%23', '#').gsub(%r|[\{\(\)\}]|, '')
-      ref_resource = ref.split('#/definitions/').last.split('/').first.gsub('-','_')
       identity_key, identity_value = schema.dereference(ref)
+      ref_resource = identity_key.split('#/definitions/').last.split('/').first.gsub('-','_')
       if identity_value.has_key?('anyOf')
         '{' + ref_resource + '_' + identity_value['anyOf'].map {|r| r['$ref'].split('/').last}.join('_or_') + '}'
       else
